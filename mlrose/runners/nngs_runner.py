@@ -1,3 +1,5 @@
+import sklearn.metrics as skmt
+
 from mlrose import NNClassifier
 from mlrose.decorators import short_name
 from mlrose.runners._nn_runner_base import _NNRunnerBase
@@ -36,8 +38,10 @@ Example usage:
 class NNGSRunner(_NNRunnerBase):
 
     def __init__(self, x_train, y_train, x_test, y_test, experiment_name, seed, iteration_list, algorithm,
-                 grid_search_parameters, bias=True, early_stopping=True, clip_max=1e+10,
-                 max_attempts=500, n_jobs=1, cv=5, generate_curves=True, output_directory=None):
+                 grid_search_parameters, grid_search_scorer_method=skmt.balanced_accuracy_score,
+                 bias=True, early_stopping=True, clip_max=1e+10,
+                 max_attempts=500, n_jobs=1, cv=5, generate_curves=True, output_directory=None,
+                 **kwargs):
 
         # update short name based on algorithm
         self._set_dynamic_runner_name(f'{get_short_name(self)}_{get_short_name(algorithm)}')
@@ -58,7 +62,9 @@ class NNGSRunner(_NNRunnerBase):
                          generate_curves=generate_curves,
                          output_directory=output_directory,
                          n_jobs=n_jobs,
-                         cv=cv)
+                         cv=cv,
+                         grid_search_scorer_method=grid_search_scorer_method,
+                         **kwargs)
 
         # build the classifier
         self.classifier = NNClassifier(runner=self,
@@ -66,6 +72,7 @@ class NNGSRunner(_NNRunnerBase):
                                        max_attempts=max_attempts,
                                        clip_max=clip_max,
                                        early_stopping=early_stopping,
+                                       seed=seed,
                                        bias=bias)
 
     def run_one_experiment_(self, algorithm, total_args, **params):

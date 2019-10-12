@@ -22,6 +22,7 @@ class NNClassifier(_NNBase):
                  bias=True,
                  early_stopping=False,
                  clip_max=1e+10,
+                 seed=None,
                  **kwargs
                  ):
         super().__init__()
@@ -53,6 +54,7 @@ class NNClassifier(_NNBase):
         self.node_count = None
         self.loss = None
         self.fit_started_ = False
+        self.seed = seed
 
         # extra parameters
         self.kwargs = kwargs
@@ -90,7 +92,7 @@ class NNClassifier(_NNBase):
         self.problem = problem
 
         # check for early abort.
-        if self.runner.has_aborted():
+        if self.runner.has_aborted() or self.runner.replay_mode():
             self.fitted_weights = np.array([np.NaN] * self.node_count)
             self.loss = np.NaN
             self.output_activation = self.fitness_fn.get_output_activation()
@@ -100,6 +102,7 @@ class NNClassifier(_NNBase):
             # self._perform_grid_search()
             params = {k: self.__getattribute__(k) for k in self.kwargs}
             if init_weights is None:
+                np.random.seed(self.seed)
                 init_weights = np.random.uniform(-1, 1, self.node_count)
             params['init_state'] = init_weights
             total_args = {
@@ -141,3 +144,7 @@ class NNClassifier(_NNBase):
 
         self.predicted_probabilities = pp
         return y_pred
+
+    def predict_proba(self, x_test):
+        self.predict(x_test)
+        return self.predicted_probabilities
